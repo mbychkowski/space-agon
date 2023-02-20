@@ -15,12 +15,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html"
 	"log"
 	"net/http"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -31,14 +34,21 @@ import (
 	"github.com/mbychkowski/space-agon/game/pb"
 	"github.com/mbychkowski/space-agon/game/protostream"
 	"golang.org/x/net/websocket"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	pbListener "github.com/mbychkowski/space-agon/observer-WIP/pb"
+	// "google.golang.org/grpc"
+	// "google.golang.org/grpc/credentials/insecure"
+	// pbListener "github.com/mbychkowski/space-agon/listener/pb"
 )
+
+type GameEvent struct {
+	EventID   string
+	EventType string
+	Timestamp int64
+	Data      interface{}
+}
 
 const (
 	listApiHost = "listener.default.svc.cluster.local"
-	listApiPort = "50051"
+	listApiPort = "7777"
 )
 
 var (
@@ -47,7 +57,29 @@ var (
 )
 
 func main() {
-	log.Println("Initializing dedicated server")
+	ge := &GameEvent{EventID: "MikeB", EventType: "Hello Again", Timestamp: 1294706395881547000, Data: "hello game event data destroy"}
+
+	b, err := json.Marshal(ge)
+
+	rw := open(listApiHost+":"+listApiPort)
+	if err != nil {
+		println("Client failed to connect to "+listApiHost+":"+listApiPort, err)
+	}
+
+	log.Println("Writing data to tcp connection:", string(b))
+	rw.WriteString(string(b))
+
+	log.Println("Flush the buffer.")
+	err = rw.Flush()
+	if err != nil {
+		println("Flush failed", err)
+	}
+
+	// log.Println("Read the reply.")
+	// response, err := rw.ReadString('\n')
+	// if err != nil {
+	// 	println("Client: Failed to read the reply: '"+response+"'", err)
+	// }
 
 	playerConnected, playerDisconnected := startAgones()
 
@@ -57,25 +89,31 @@ func main() {
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	})
 
-	log.Println("Starting dedicated server")
+	log.Println("Starting dedicated server!!")
 	log.Fatal(http.ListenAndServe(":2156", nil))
 
-	// Set up a connection to helloworld server.
-	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	c := pbListener.NewGreeterClient(conn)
+	////////////////////////////////////////////////////////////////
 
-		// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	r, err := c.SayHelloAgain(ctx, &pbListener.HelloRequest{Name: *name})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	log.Printf("Greeting: %s", r.GetMessage())
+	////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+	// Set up a connection to helloworld server.
+	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// if err != nil {
+	// 	log.Fatalf("did not connect: %v", err)
+	// }
+	// defer conn.Close()
+	// c := pbListener.NewGreeterClient(conn)
+
+	// 	// Contact the server and print out its response.
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// defer cancel()
+	// r, err := c.SayHelloAgain(ctx, &pbListener.HelloRequest{Name: *name})
+	// if err != nil {
+	// 	log.Fatalf("could not greet: %v", err)
+	// }
+	// log.Printf("Greeting: %s", r.GetMessage())
+////////////////////////////////////////////////////////////////
 }
 
 type dedicated struct {
@@ -363,4 +401,15 @@ func startAgones() (playerConnected func(), playerDisconnected func()) {
 		}, func() {
 			waitForEmpty.Done()
 		}
+}
+
+func open(addr string) *bufio.ReadWriter {
+	conn, err := net.Dial("tcp", listApiHost+":"+listApiPort)
+	if err != nil {
+		fmt.Println("Dialing "+addr+" failed:", err)
+	}
+
+	log.Println("Connected to tcp listener")
+
+ 	return bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
 }

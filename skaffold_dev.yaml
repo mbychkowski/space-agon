@@ -1,0 +1,65 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: skaffold/v2beta29
+kind: Config
+metadata:
+  name: space-agon
+build:
+  tagPolicy:
+    gitCommit:
+      variant: CommitSha
+      prefix: ska-dev-
+  artifacts:
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated
+    context: ./
+    docker:
+      dockerfile: Dedicated.Dockerfile
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-director
+    context: ./
+    docker:
+      dockerfile: Director.Dockerfile
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend
+    context: ./
+    docker:
+      dockerfile: Frontend.Dockerfile
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
+    context: ./
+    docker:
+      dockerfile: Mmf.Dockerfile
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener
+    context: ./
+    docker:
+      dockerfile: Listener.Dockerfile
+  googleCloudBuild:
+    projectId: prj-zeld-infra-core
+    timeout: "600s"
+    concurrency: 0
+    region: "us-central1"
+test:
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-director
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener
+
+deploy:
+  kubectl:
+    manifests:
+    - deploy_test.yaml

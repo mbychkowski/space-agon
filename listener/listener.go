@@ -2,10 +2,10 @@
 package main
 
 import (
-    "bufio"
-    "fmt"
-    "log"
-    "net"
+  "bufio"
+  "fmt"
+  "log"
+  "net"
 	"flag"
 	"context"
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 
 var (
 	port = flag.Int("port", 7777, "TCP Port for Listener")
-	enablePrint = flag.Bool("print", false, "Enable Print")
+	enablePrint = flag.Bool("print", true, "Enable Print")
 	enableDB = flag.Bool("db", false, "Enable Database")
 )
 
@@ -33,38 +33,38 @@ type GameEvent struct {
 func main() {
 	flag.Parse()
 
-    ln, err := net.Listen("tcp", fmt.Sprintf(":%v", *port))
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer ln.Close()
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%v", *port))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
 
 	fmt.Printf("Listening on port: %v\n", *port)
 
-    for {
-        conn, err := ln.Accept()
-        if err != nil {
-            log.Println(err)
-            continue
-        }
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 
-        go handleConn(conn)
-    }
+		go handleConn(conn)
+	}
 }
 
 func handleConn(conn net.Conn) {
-    defer conn.Close()
+	defer conn.Close()
 
-    scanner := bufio.NewScanner(conn)
-    for scanner.Scan() {
-		// Get Event
-        //text := scanner.Text()
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+	// Get Event
+	//text := scanner.Text()
 		var ge GameEvent
-        err := json.Unmarshal(scanner.Bytes(), &ge)
-        if err != nil {
-            fmt.Println("Error decoding payload:", err)
-        } else if *enablePrint {
-	        fmt.Println("Received event:", ge)
+		err := json.Unmarshal(scanner.Bytes(), &ge)
+		if err != nil {
+			fmt.Println("Error decoding payload:", err)
+		} else if *enablePrint {
+			fmt.Println("Received event:", ge)
 		}
 
 		// Validate Payload
@@ -83,7 +83,7 @@ func handleConn(conn net.Conn) {
 
     }
     if err := scanner.Err(); err != nil {
-        log.Println("Error reading from connection:", err)
+			log.Println("Error reading from connection:", err)
     }
 
 }
