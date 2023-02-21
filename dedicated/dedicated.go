@@ -15,7 +15,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
@@ -34,13 +33,11 @@ import (
 	"github.com/mbychkowski/space-agon/game/pb"
 	"github.com/mbychkowski/space-agon/game/protostream"
 	"golang.org/x/net/websocket"
-	// "google.golang.org/grpc"
-	// "google.golang.org/grpc/credentials/insecure"
-	// pbListener "github.com/mbychkowski/space-agon/listener/pb"
 )
 
 type GameEvent struct {
 	EventID   string
+	PlayerID  int64
 	EventType string
 	Timestamp int64
 	Data      interface{}
@@ -57,29 +54,6 @@ var (
 )
 
 func main() {
-	ge := &GameEvent{EventID: "MikeB", EventType: "Hello Again", Timestamp: 1294706395881547000, Data: "hello game event data destroy"}
-
-	b, err := json.Marshal(ge)
-
-	rw := open(listApiHost+":"+listApiPort)
-	if err != nil {
-		println("Client failed to connect to "+listApiHost+":"+listApiPort, err)
-	}
-
-	log.Println("Writing data to tcp connection:", string(b))
-	rw.WriteString(string(b))
-
-	log.Println("Flush the buffer.")
-	err = rw.Flush()
-	if err != nil {
-		println("Flush failed", err)
-	}
-
-	// log.Println("Read the reply.")
-	// response, err := rw.ReadString('\n')
-	// if err != nil {
-	// 	println("Client: Failed to read the reply: '"+response+"'", err)
-	// }
 
 	playerConnected, playerDisconnected := startAgones()
 
@@ -91,29 +65,6 @@ func main() {
 
 	log.Println("Starting dedicated server!!")
 	log.Fatal(http.ListenAndServe(":2156", nil))
-
-	////////////////////////////////////////////////////////////////
-
-	////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////
-	// Set up a connection to helloworld server.
-	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	// if err != nil {
-	// 	log.Fatalf("did not connect: %v", err)
-	// }
-	// defer conn.Close()
-	// c := pbListener.NewGreeterClient(conn)
-
-	// 	// Contact the server and print out its response.
-	// ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	// defer cancel()
-	// r, err := c.SayHelloAgain(ctx, &pbListener.HelloRequest{Name: *name})
-	// if err != nil {
-	// 	log.Fatalf("could not greet: %v", err)
-	// }
-	// log.Printf("Greeting: %s", r.GetMessage())
-////////////////////////////////////////////////////////////////
 }
 
 type dedicated struct {
@@ -176,7 +127,7 @@ func (d *dedicated) Handler(c *websocket.Conn) {
 	cid := <-d.nextCid
 	d.nextCid <- cid + 1
 
-	log.Println("Client ID?", cid, d.nextCid)
+	log.Println("Client ID", cid, d.nextCid)
 
 	toSend, recieve := d.mr.connect(cid)
 	defer d.mr.disconnect(cid)
@@ -206,10 +157,39 @@ func (d *dedicated) Handler(c *websocket.Conn) {
 		}
 	}()
 
+	conn := open(listApiHost+":"+listApiPort)
+
 	go func() {
+		ge := &GameEvent{
+			EventID: "1234",
+			PlayerID: cid,
+			EventType: "NoEvent",
+			Timestamp: time.Now().Unix(),
+			Data: "test event data...",
+		}
+		writeEvent(ge, conn)
+
 		defer cancel()
+
 		for {
 			memos := &pb.Memos{}
+
+			// log.Println(memos)
+
+			// TODO
+			// if memos is a SpawnMissile or DestroyEvent
+			// Write to listeners
+			// {
+			// ge := &GameEvent{
+			// 	EventID: "1234", // timestamp with random + playerID
+			// 	PlayerID: cid,
+			// 	EventType: "NoEvent", SpawnMissile or DestroyEvent
+			// 	Timestamp: time.Now().Unix(),
+			// 	Data: "Specific details around",
+			// }
+			// writeEvent(ge, conn)
+			// }
+
 			err := stream.Recv(memos)
 			if err != nil {
 				log.Printf("Client %d had read/decode error %v", cid, err)
@@ -403,7 +383,7 @@ func startAgones() (playerConnected func(), playerDisconnected func()) {
 		}
 }
 
-func open(addr string) *bufio.ReadWriter {
+func open(addr string) net.Conn{
 	conn, err := net.Dial("tcp", listApiHost+":"+listApiPort)
 	if err != nil {
 		fmt.Println("Dialing "+addr+" failed:", err)
@@ -411,5 +391,31 @@ func open(addr string) *bufio.ReadWriter {
 
 	log.Println("Connected to tcp listener")
 
- 	return bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
+	return conn
+}
+
+
+func writeEvent(gameEvent *GameEvent, c net.Conn) {
+	b, err := json.Marshal(gameEvent)
+	if err != nil {
+		log.Println("Can't convert to JSON: ", err)
+	}
+
+	log.Println("Writing data to tcp connection:", string(b))
+	_, err = c.Write([]byte(string(b)))
+	if err != nil {
+		log.Println("Error writing data to tcp connection: ", err)
+	}
+
+	// log.Println("Flush the buffer.")
+	// err = rw.Flush()
+	// if err != nil {
+	// 	println("Flush failed", err)
+	// }
+
+	// log.Println("Read the reply.")
+	// response, err := rw.ReadString('\n')
+	// if err != nil {
+	// 	println("Client: Failed to read the reply: '"+response+"'", err)
+	// }
 }
