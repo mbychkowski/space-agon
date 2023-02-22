@@ -84,16 +84,12 @@ func GetLeaderboard(c *gin.Context) {
 
 		row, err := iter.Next()
 		if err == iterator.Done {
-			// return nil
 			break
 		}
 		if err != nil {
-			// return err
 			fmt.Println("error retrieving Spanner results:", err)
 		}
-		// if err := row.Columns(&eventId, &playerId, &eventType, &timestamp, &data); err != nil {
 		if err := row.Columns(&playerId, &count); err != nil {
-			// return err
 			fmt.Println("error parsing Spanner result:", err)
 		}
 
