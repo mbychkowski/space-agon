@@ -26,16 +26,17 @@
         }
       }
 
-      async function fetchLeaderboard() {
+      var fetchLeaderboard = async function() {
         console.log("Fetching leaderboard")
-          // try {
-          //   const response = await MyGoFunc('https://api.taylor.rest/')
-          //   const message = await response.json()
-          //   console.log(message)
-          // } catch (err) {
-          //   console.error('Caught exception', err)
-          // }
+        try {
+          // const response = await goFetchUrl()
+          const response = await goFetchUrl('http://34.146.254.62/leaderboard')
+          // const message = await response.json()
+          console.log(response)
+        } catch (err) {
+          console.error('Caught exception', err)
         }
+      }
 
       if (!WebAssembly.instantiateStreaming) { // polyfill
         WebAssembly.instantiateStreaming = async (resp, importObject) => {
@@ -62,13 +63,13 @@
       </div>
       <div id="overlay-main-menu" hidden>
         <div id="title">Space Agon</div>
-        <div id="find-game" class="menu-item middle-choice" onclick="matchmake();">Find Game</div>
-        <div id="connect-to-server" class="menu-item lower-choice" onclick="setOverlay('overlay-choose-ip');">Connect To Server</div>
-        <div id="go-to-leaderboard" class="menu-item lower-choice" onclick="fetchLeaderboard();">Connect To Server
+        <div id="find-game" class="menu-item upper-choice" onclick="matchmake();">Find Game</div>
+        <div id="connect-to-server" class="menu-item middle-choice" onclick="setOverlay('overlay-choose-ip');">Connect To Server</div>
+        <div id="go-to-leaderboard" class="menu-item lower-choice" onclick="fetchLeaderboard();">Leaderboard
         </div>
       </div>
       <div id="overlay-choose-ip" hidden>
-        <input type="text" class="upper-choice" id="connection-address">
+        <input type="text" class="middle-choice" id="connection-address">
         <div class="middle-choice menu-item" onclick="connect(document.getElementById('connection-address').value)">Connect</div>
         <div class="lower-choice menu-item" onclick="setOverlay('overlay-main-menu');">Cancel</div>
       </div>
@@ -77,6 +78,9 @@
       </div>
       <div id="overlay-connecting" hidden>
         <div class="lower-choice">Connecting...</div>
+      </div>
+      <div id="overlay-leaderboard" hidden>
+        <div class="lower-choice" onclick="setOverlay('overlay-main-menu');">Back</div>
       </div>
       <div id="overlay-error" hidden>
         <div id="error-text">There was an erorr, check logs for Agones or Open Match.</div>

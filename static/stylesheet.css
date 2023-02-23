@@ -16,7 +16,7 @@ body {
 }
 
 body {
-  background-color: #0a1a3f; 
+  background-color: #0a1a3f;
 }
 
 html, body, #container, #overlays {
@@ -80,6 +80,15 @@ html, body, #container, #overlays {
   height: 10%;
   left: 10%;
   bottom: 15%;
+}
+
+.lower-choice {
+  font-size: 7vmin;
+  position: absolute;
+  width: 80%;
+  height: 10%;
+  left: 10%;
+  bottom: 5%;
 }
 
 .lower-choice {

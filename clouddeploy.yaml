@@ -1,0 +1,52 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: space-agon-leaderboard
+  annotations:
+    about: Leaderboard service for space-agon
+  labels:
+    lang: go
+description: |
+  Delivery pipeline for CI CD appBakend (in python) and then
+  packaged via buildpacks.
+serialPipeline:
+ stages:
+  - targetId: apac
+    profiles: [apac]
+  - targetId: northam-emea
+    profiles: [northam-emea]
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: northam-emea
+description: prod deployment to northam and europe
+requireApproval: true
+multiTarget:
+  targetIds: [northam, emea]
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: apac
+description: APAC cluster (testing, load testing, feature feedback)
+gke:
+  cluster: projects/prj-zeld-gke/locations/asia-northeast1/clusters/gke-asia-northeast1
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: northam
+description:  |
+  NORTHAM cluster (full launch)
+gke:
+  cluster: projects/prj-zeld-gke/locations/us-west1/clusters/gke-us-west1
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: emea
+description:  |
+  EMEA cluster (full launch)
+gke:
+  cluster: projects/prj-zeld-gke/locations/europe-west1/clusters/gke-europe-west1

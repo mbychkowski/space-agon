@@ -18,6 +18,8 @@ metadata:
   name: space-agon
 build:
   tagPolicy:
+    # sha256: {}
+
     gitCommit:
       variant: CommitSha
       prefix: ska-dev-
@@ -42,6 +44,10 @@ build:
     context: ./
     docker:
       dockerfile: Listener.Dockerfile
+  - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-leaderboard
+    context: ./
+    docker:
+      dockerfile: Leaderboard.Dockerfile
   googleCloudBuild:
     projectId: prj-zeld-infra-core
     timeout: "600s"
@@ -58,6 +64,8 @@ test:
     image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
   - context: .
     image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener
+  - context: .
+    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-leaderboard
 
 deploy:
   kubectl:

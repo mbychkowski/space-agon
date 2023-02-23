@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
   "github.com/gin-gonic/gin"
 	"github.com/mbychkowski/space-agon/leaderboard/controllers"
 )
@@ -11,6 +13,10 @@ func main() {
 	r.GET("/events", controllers.GetEvents)
 
 	r.GET("/leaderboard", controllers.GetLeaderboard)
+
+	r.GET("/healthz", func(c *gin.Context) {
+    c.JSON(http.StatusOK, gin.H{"data": "ok"})
+  })
 
   r.Run()
 }

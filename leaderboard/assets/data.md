@@ -22,10 +22,22 @@ Data: nid:5577006791947779412 owner:5577006791947779410 pos:<x:-3.7588067 y:-10.
 To populate Spanner
 
 gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \
-    --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
-VALUES (3, '2_jfb', 1676994786, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
+  --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
+  VALUES (3, '2_jfb', 1676994786, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
 
 
-"INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
-VALUES (2, '2_jfb', 1676994784, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
+gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \
+  --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
+  VALUES (2, '2_jfb', 1676994784, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
 
+gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \
+  --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
+  VALUES (3, '2_jfb', 1676994791, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
+
+gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \
+  --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
+  VALUES (4, '1_meb', 1676994799, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
+
+
+Example results
+{"data":[{"Name":"1_meb","Score":1},{"Name":"2_jfb","Score":2}]}/

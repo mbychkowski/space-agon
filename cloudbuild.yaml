@@ -9,9 +9,34 @@ steps:
       echo "***********************"
       echo "$REPO_NAME"
       echo "$BRANCH_NAME"
-      echo image: "$_REGISTRY/$_IMAGE:$_TAG"
       echo "***********************"
-- name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', '${_REGISTRY}/${_IMAGE}:${_TAG}', '-f', '${_DOCKERFILE}', '.' ]
-images:
-- '${_REGISTRY}/${_IMAGE}'
+
+- name: gcr.io/k8s-skaffold/skaffold:v2.0.5
+  id: skaffoldBuild
+  args:
+    - "skaffold"
+    - "build"
+    - "--file-output=/workspace/artifacts.json"
+    - "--default-repo=${_REGION}-docker.pkg.dev/prj-zeld-infra-core/$_ARTIFACT_REPONAME"
+    - "--module=$_DEPLOY_PIPELINE"
+
+- id: 'gcloudDeployDev'
+  name: gcr.io/cloud-builders/gcloud
+  entrypoint: 'bash'
+  dir: /workspace
+  waitFor:
+  - skaffoldBuild
+  args:
+  - '-c'
+  - |
+      gcloud deploy releases create "$_DEPLOY_PIPELINE-$SHORT_SHA"  \
+        --delivery-pipeline="$_DEPLOY_PIPELINE" \
+        --build-artifacts=/workspace/artifacts.json \
+        --skaffold-file="apps/$_DEPLOY_PIPELINE/skaffold.yaml" \
+        --skaffold-version="2.0" \
+        --region="${_REGION}" &&
+        echo "$_DEPLOY_PIPELINE-$SHORT_SHA" > "$_RELEASE_FILE_PATH" # /workspace/.cb.releasename
+
+options:
+  # This allows for missing ENV variables.
+  substitution_option: 'ALLOW_LOOSE'

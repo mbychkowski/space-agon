@@ -20,10 +20,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"http"
 	"io"
-	"ioutil"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"sync"
 	"syscall/js"
 
@@ -114,6 +114,8 @@ func newClient() *client {
 		setOverlay(args[0].String())
 		return nil
 	}))
+
+	js.Global().Set("goFetchUrl", goFetchUrl())
 
 	js.Global().Get("window").Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		log.Println("Resizing")
@@ -389,6 +391,7 @@ var overlays = map[string]js.Value{
 	"overlay-loading":        js.Null(),
 	"overlay-choose-ip":      js.Null(),
 	"overlay-matchmaking":    js.Null(),
+	"overlay-leaderboard":    js.Null(),
 	"overlay-connecting":     js.Null(),
 	"overlay-error":          js.Null(),
 	"overlay-tutorial-turn":  js.Null(),
@@ -583,8 +586,26 @@ func isMemoRecipient(cid int64, memo *pb.Memo) bool {
 	panic("Unknown recipient type")
 }
 
-func fetchUrl() js.Func {
+// type player struct {
+// 	Name  string	`json:name`
+// 	Score int64		`json:score`
+// }
+
+func goFetchUrl() js.Func {
+	// var player Player
+	// OLD
+	// return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	// 	setOverlay("overlay-leaderboard")
+	// // Return a JS dictionary with two keys (of heterogeneous type)
+	// 	return map[string]interface{}{
+	// 		"hello":  "world",
+	// 		"answer": 42,
+	// 	}
+	// })
+	// OLD
+
 	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		setOverlay("overlay-leaderboard")
 		// Get the URL as argument
 		// args[0] is a js.Value, so we need to get a string out of it
 		requestUrl := args[0].String()
@@ -598,7 +619,16 @@ func fetchUrl() js.Func {
 			// Run this code asynchronously
 			go func() {
 				// Make the HTTP request
-				res, err := http.DefaultClient.Get(requestUrl)
+
+				req, err := http.NewRequest(http.MethodGet, requestUrl, nil)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				req.Header.Add("js.fetch:mode", "no-cors")
+
+				// res, err := http.DefaultClient.Get(requestUrl)
+				res, err := http.DefaultClient.Do(req)
 				if err != nil {
 					// Handle errors: reject the Promise if we have an error
 					errorConstructor := js.Global().Get("Error")
@@ -609,6 +639,7 @@ func fetchUrl() js.Func {
 				defer res.Body.Close()
 
 				// Read the response body
+				// json.NewDecoder(resp.Body).Decode(&player)
 				data, err := ioutil.ReadAll(res.Body)
 				if err != nil {
 					// Handle errors here too
