@@ -1,0 +1,31 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: space-agon-leaderboard
+build:
+  tagPolicy:
+    gitCommit: {}
+  artifacts:
+  - image: space-agon-leaderboard
+    context: .
+    docker:
+      dockerfile: Dockerfile
+      noCache: false
+      pullParent: false
+      squash: false
+profiles:
+- name: apac
+  manifests:
+    kustomize:
+      paths:
+      - k8s/base
+- name: northam
+  manifests:
+    kustomize:
+      paths:
+      - k8s/base
+- name: emea
+  manifests:
+    kustomize:
+      paths:
+      - k8s/base

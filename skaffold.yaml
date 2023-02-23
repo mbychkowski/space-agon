@@ -1,0 +1,7 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: space-agon-demo
+requires:
+  - configs: [space-agon-leaderboard]
+    path: leaderboard/skaffold.yaml
