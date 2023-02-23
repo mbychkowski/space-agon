@@ -62,80 +62,80 @@ func handleConn(conn net.Conn) {
 
     scanner := bufio.NewScanner(conn)
     for scanner.Scan() {
-    	
-		// Receive protobuf and unmarshall
-		newMemos := &pb.Memos{}
-		err := proto.Unmarshal(scanner.Bytes(), newMemos)
-		if err != nil {
-			fmt.Println("Error receiving bytes or unmarshalling: ", err)
-		} else if *enablePrint {
+        
+        // Receive protobuf and unmarshall
+        newMemos := &pb.Memos{}
+        err := proto.Unmarshal(scanner.Bytes(), newMemos)
+        if err != nil {
+            fmt.Println("Error receiving bytes or unmarshalling: ", err)
+        } else if *enablePrint {
             fmt.Println("Received event:", newMemos)
         }
 
-		// Iterate and parse memos protobuf
-		for _, memo := range newMemos.Memos {
+        // Iterate and parse memos protobuf
+        for _, memo := range newMemos.Memos {
 
-			/* Kept this in here for now just for debugging / reference puroses.
-			fmt.Println("Actual: ", memo.GetActual())
-			
-			if memo.GetDestroyEvent() != nil {
-				fmt.Printf("DestroyEvent: %v\n", memo.GetDestroyEvent().Nid)
-			}
-			*/
+            /* Kept this in here for now just for debugging / reference puroses.
+            fmt.Println("Actual: ", memo.GetActual())
+            
+            if memo.GetDestroyEvent() != nil {
+                fmt.Printf("DestroyEvent: %v\n", memo.GetDestroyEvent().Nid)
+            }
+            */
 
-			// Marshall Protobuf to JSON
-			marshaller := &jsonpb.Marshaler{}
-			jsonStr, err := marshaller.MarshalToString(memo)
-			if err != nil {
-				fmt.Printf("Error: %v", err)
-				return
-			}
+            // Marshall Protobuf to JSON
+            marshaller := &jsonpb.Marshaler{}
+            jsonStr, err := marshaller.MarshalToString(memo)
+            if err != nil {
+                fmt.Printf("Error: %v", err)
+                return
+            }
 
-			// Get EventType 
-			validEventTypes := []string{"PosTracks", "MomentumTracks", 
-			"RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
-			"DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
-			"SpawnShip","RegisterPlayer"}
+            // Get EventType 
+            validEventTypes := []string{"PosTracks", "MomentumTracks", 
+            "RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
+            "DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
+            "SpawnShip","RegisterPlayer"}
 
-			var jsonData map[string]interface{}
-			err = json.Unmarshal([]byte(jsonStr), &jsonData)
-			if err != nil {
-				panic(err)
-			}
+            var jsonData map[string]interface{}
+            err = json.Unmarshal([]byte(jsonStr), &jsonData)
+            if err != nil {
+                panic(err)
+            }
 
-			var eventTypeMatch interface{}
-			for key := range jsonData {
-				for _, k := range validEventTypes {
-					if strings.EqualFold(key, k) {
-						eventTypeMatch = k
-						
-					}
-				}
-			}
+            var eventTypeMatch interface{}
+            for key := range jsonData {
+                for _, k := range validEventTypes {
+                    if strings.EqualFold(key, k) {
+                        eventTypeMatch = k
+                        
+                    }
+                }
+            }
 
-			// Create Game Event Struct
-			ge := GameEvent{
-				EventID:   fmt.Sprintf("eid%010d", time.Now().Unix()),
-				EventType: eventTypeMatch.(string),
-				Timestamp: time.Now().Unix(),
-				Data: jsonStr,
-			}
+            // Create Game Event Struct
+            ge := GameEvent{
+                EventID:   fmt.Sprintf("eid%010d", time.Now().Unix()),
+                EventType: eventTypeMatch.(string),
+                Timestamp: time.Now().Unix(),
+                Data: jsonStr,
+            }
 
-			// Validate Payload
-			if !ge.validate() {
-				fmt.Println("Invalid event received")
-				return
-			}
+            // Validate Payload
+            if !ge.validate() {
+                fmt.Println("Invalid event received")
+                return
+            }
 
-			// Process Event
-			pEvent := processEvent(ge)
+            // Process Event
+            pEvent := processEvent(ge)
 
-			// Write to Database
-			if *enableDB {
-				writeToDB(pEvent)
-			}
+            // Write to Database
+            if *enableDB {
+                writeToDB(pEvent)
+            }
 
-		}
+        }
 
     }
     if err := scanner.Err(); err != nil {
