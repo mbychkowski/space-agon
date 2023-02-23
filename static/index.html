@@ -26,6 +26,17 @@
         }
       }
 
+      async function fetchLeaderboard() {
+        console.log("Fetching leaderboard")
+          // try {
+          //   const response = await MyGoFunc('https://api.taylor.rest/')
+          //   const message = await response.json()
+          //   console.log(message)
+          // } catch (err) {
+          //   console.error('Caught exception', err)
+          // }
+        }
+
       if (!WebAssembly.instantiateStreaming) { // polyfill
         WebAssembly.instantiateStreaming = async (resp, importObject) => {
           const source = await (await resp).arrayBuffer();
@@ -53,6 +64,8 @@
         <div id="title">Space Agon</div>
         <div id="find-game" class="menu-item middle-choice" onclick="matchmake();">Find Game</div>
         <div id="connect-to-server" class="menu-item lower-choice" onclick="setOverlay('overlay-choose-ip');">Connect To Server</div>
+        <div id="go-to-leaderboard" class="menu-item lower-choice" onclick="fetchLeaderboard();">Connect To Server
+        </div>
       </div>
       <div id="overlay-choose-ip" hidden>
         <input type="text" class="upper-choice" id="connection-address">
