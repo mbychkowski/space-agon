@@ -7,9 +7,9 @@ build:
     gitCommit: {}
   artifacts:
   - image: space-agon-leaderboard
-    context: .
+    context: ../
     docker:
-      dockerfile: Dockerfile
+      dockerfile: ../Leaderboard.Dockerfile
       noCache: false
       pullParent: false
       squash: false
