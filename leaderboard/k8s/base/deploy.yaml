@@ -1,0 +1,49 @@
+###############################################
+# Leaderboard
+###############################################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leaderboard
+spec:
+  selector:
+    matchLabels:
+      run: leaderboard
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: leaderboard
+    spec:
+      serviceAccountName: sa-leaderboard
+      containers:
+        - name: leaderboard
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-leaderboard
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaderboard
+  labels:
+    run: leaderboard
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    run: leaderboard
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: wi-sa-leaderboard@prj-zeld-gke.iam.gserviceaccount.com
+  name: sa-leaderboard
