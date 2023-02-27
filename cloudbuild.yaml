@@ -34,7 +34,7 @@ steps:
       gcloud deploy releases create "$_DEPLOY_PIPELINE-$SHORT_SHA"  \
         --delivery-pipeline="$_DEPLOY_PIPELINE" \
         --build-artifacts=/workspace/artifacts.json \
-        --skaffold-file="apps/$_DEPLOY_PIPELINE/skaffold.yaml" \
+        --skaffold-file="$_DEPLOY_SVC/skaffold.yaml" \
         --skaffold-version="2.0" \
         --region="${_DEPLOY_PIPELINE_REGION}" &&
         echo "$_DEPLOY_PIPELINE-$SHORT_SHA" > /workspace/.cb.releasename
