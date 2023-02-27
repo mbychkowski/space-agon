@@ -19,15 +19,11 @@ package main
 
 import (
 	"errors"
-	// "encoding/json"
 	"fmt"
 	"io"
-	// "io/ioutil"
 	"log"
-	// "net/http"
 	"sync"
 	"syscall/js"
-	// "time"
 
 	"github.com/mbychkowski/space-agon/game"
 	"github.com/mbychkowski/space-agon/game/pb"
@@ -592,7 +588,3 @@ type Player struct {
 	name 	string 	`json:"name"`
 	score int			`json:"score"`
 }
-
-// func goFetchLeaderboard() {
-// 	setOverlay("overlay-leaderboard")
-// }

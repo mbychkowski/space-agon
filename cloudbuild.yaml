@@ -17,7 +17,7 @@ steps:
     - "skaffold"
     - "build"
     - "--file-output=/workspace/artifacts.json"
-    - "--default-repo=${_REGION}-docker.pkg.dev/prj-zeld-infra-core/$_ARTIFACT_REPONAME"
+    - "--default-repo=${_DEPLOY_PIPELINE_REGION}-docker.pkg.dev/prj-zeld-infra-core/$_ARTIFACT_REPONAME"
     - "--module=$_DEPLOY_PIPELINE"
 
 - id: 'gcloudDeployDev'
@@ -35,7 +35,7 @@ steps:
         --skaffold-file="apps/$_DEPLOY_PIPELINE/skaffold.yaml" \
         --skaffold-version="2.0" \
         --region="${_REGION}" &&
-        echo "$_DEPLOY_PIPELINE-$SHORT_SHA" > "$_RELEASE_FILE_PATH" # /workspace/.cb.releasename
+        echo "$_DEPLOY_PIPELINE-$SHORT_SHA" > /workspace/.cb.releasename
 
 options:
   # This allows for missing ENV variables.
