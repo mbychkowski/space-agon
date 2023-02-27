@@ -19,7 +19,7 @@ import (
 
   "github.com/golang/protobuf/proto"
   "github.com/golang/protobuf/jsonpb"
-  "github.com/googleforgames/space-agon/game/pb"
+  "github.com/mbychkowski/space-agon/game/pb"
 )
 
 var (
@@ -30,9 +30,11 @@ var (
 
 type GameEvent struct {
     EventID   string      `json:"eventid"`
+		PlayerID 	string 			`json:"playerid"`
     EventType string      `json:"eventtype"`
     Timestamp int64       `json:"timestamp"`
-    Data      interface{} `json:"data"`
+    Data      string			`json:"data"`
+		LastUpdated int64
 }
 
 func main() {
@@ -62,7 +64,7 @@ func handleConn(conn net.Conn) {
 
     scanner := bufio.NewScanner(conn)
     for scanner.Scan() {
-        
+
         // Receive protobuf and unmarshall
         newMemos := &pb.Memos{}
         err := proto.Unmarshal(scanner.Bytes(), newMemos)
@@ -77,7 +79,7 @@ func handleConn(conn net.Conn) {
 
             /* Kept this in here for now just for debugging / reference puroses.
             fmt.Println("Actual: ", memo.GetActual())
-            
+
             if memo.GetDestroyEvent() != nil {
                 fmt.Printf("DestroyEvent: %v\n", memo.GetDestroyEvent().Nid)
             }
@@ -91,8 +93,8 @@ func handleConn(conn net.Conn) {
                 return
             }
 
-            // Get EventType 
-            validEventTypes := []string{"PosTracks", "MomentumTracks", 
+            // Get EventType
+            validEventTypes := []string{"PosTracks", "MomentumTracks",
             "RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
             "DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
             "SpawnShip","RegisterPlayer"}
@@ -108,17 +110,19 @@ func handleConn(conn net.Conn) {
                 for _, k := range validEventTypes {
                     if strings.EqualFold(key, k) {
                         eventTypeMatch = k
-                        
+
                     }
                 }
             }
 
             // Create Game Event Struct
             ge := GameEvent{
-                EventID:   fmt.Sprintf("eid%010d", time.Now().Unix()),
-                EventType: eventTypeMatch.(string),
-                Timestamp: time.Now().Unix(),
-                Data: jsonStr,
+                EventID:   		fmt.Sprintf("eid%010d", time.Now().Unix()),
+								PlayerID:  		randString()
+                EventType: 		eventTypeMatch.(string),
+                Timestamp: 		time.Now().Unix(),
+                Data: 				jsonStr,
+								LastUpdated:	time.Now().Unix(),
             }
 
             // Validate Payload
@@ -167,10 +171,11 @@ func writeToDB(ge GameEvent) {
 
 func spannerWriteDML(ctx context.Context, keyString, valueString string) error {
 
-    gcpProjectId    := os.Getenv("GCP_PROJECT_ID")
-    spannerInstance := os.Getenv("SPANNER_INSTANCE")
-    spannerDatabase := os.Getenv("SPANNER_DATABASE")
-    spannerTable    := os.Getenv("SPANNER_TABLE_GAME_TELEMETRY")
+
+    gcpProjectId    := "prj-zeld-gke"
+    spannerInstance := "spaceagon-demo"
+    spannerDatabase := "spaceagon-db-demo"
+    spannerTable    := "gameevents"
 
     connectionStr := fmt.Sprintf("projects/%v/instances/%v/databases/%v", gcpProjectId, spannerInstance, spannerDatabase)
 
@@ -238,4 +243,10 @@ func formatStruct(s interface{}) (string, string) {
     keyString := strings.Join(structNames, ", ")
     valueString := strings.Join(structValues, ", ")
     return keyString, valueString
+}
+
+func randString() string {
+	playerids := []int{"1_meb", "1_xyz", "2_abc", "2_jfb", "1_dtz"}
+
+	playerid := playerids[rand.Intn(5)]
 }

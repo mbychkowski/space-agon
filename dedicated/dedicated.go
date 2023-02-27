@@ -160,22 +160,24 @@ func (d *dedicated) Handler(c *websocket.Conn) {
 	conn := open(listApiHost+":"+listApiPort)
 
 	go func() {
-		ge := &GameEvent{
-			EventID: "1234",
-			PlayerID: cid,
-			EventType: "NoEvent",
-			Timestamp: time.Now().Unix(),
-			Data: "test event data...",
-		}
-		writeEvent(ge, conn)
+		// ge := &GameEvent{
+		// 	EventID: "1234",
+		// 	PlayerID: cid,
+		// 	EventType: "NoEvent",
+		// 	Timestamp: time.Now().Unix(),
+		// 	Data: "test event data...",
+		// }
+		// writeEvent(ge, conn)
 
 		defer cancel()
 
 		for {
+
 			memos := &pb.Memos{}
 
-			// log.Println(memos)
+			log.Println(memos)
 
+			writeEvent(memos, conn)
 			// TODO
 			// if memos is a SpawnMissile or DestroyEvent
 			// Write to listeners
@@ -395,14 +397,15 @@ func open(addr string) net.Conn{
 }
 
 
-func writeEvent(gameEvent *GameEvent, c net.Conn) {
-	b, err := json.Marshal(gameEvent)
-	if err != nil {
-		log.Println("Can't convert to JSON: ", err)
-	}
+func writeEvent(memos *pb.Memos, c net.Conn) {
+	// b, err := json.Marshal(gameEvent)
+	// if err != nil {
+	// 	log.Println("Can't convert to JSON: ", err)
+	// }
 
-	log.Println("Writing data to tcp connection:", string(b))
-	_, err = c.Write([]byte(string(b)))
+	// log.Println("Writing data to tcp connection:", string(b))
+
+	_, err = c.Write(memos)
 	if err != nil {
 		log.Println("Error writing data to tcp connection: ", err)
 	}
