@@ -6,180 +6,236 @@ import (
   "fmt"
   "log"
   "net"
-	"flag"
-	"context"
-	"encoding/json"
-	"os"
-	"strings"
-	"reflect"
-	"strconv"
+  "flag"
+  "context"
+  "encoding/json"
+  "os"
+  "strings"
+  "reflect"
+  "strconv"
+  "time"
 
-	"cloud.google.com/go/spanner"
+  "cloud.google.com/go/spanner"
+
+  "github.com/golang/protobuf/proto"
+  "github.com/golang/protobuf/jsonpb"
+  "github.com/googleforgames/space-agon/game/pb"
 )
 
 var (
-	port = flag.Int("port", 7777, "TCP Port for Listener")
-	enablePrint = flag.Bool("print", true, "Enable Print")
-	enableDB = flag.Bool("db", false, "Enable Database")
+    port = flag.Int("port", 7777, "TCP Port for Listener")
+    enablePrint = flag.Bool("print", true, "Enable Print")
+    enableDB = flag.Bool("db", false, "Enable Database")
 )
 
 type GameEvent struct {
-	EventID   string      `json:"eventid"`
-	EventType string      `json:"eventtype"`
-	Timestamp int64       `json:"timestamp"`
-	Data      interface{} `json:"data"`
+    EventID   string      `json:"eventid"`
+    EventType string      `json:"eventtype"`
+    Timestamp int64       `json:"timestamp"`
+    Data      interface{} `json:"data"`
 }
 
 func main() {
-	flag.Parse()
+    flag.Parse()
 
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%v", *port))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ln.Close()
+    ln, err := net.Listen("tcp", fmt.Sprintf(":%v", *port))
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer ln.Close()
 
-	fmt.Printf("Listening on port: %v\n", *port)
+    fmt.Printf("Listening on port: %v\n", *port)
 
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+    for {
+        conn, err := ln.Accept()
+        if err != nil {
+            log.Println(err)
+            continue
+        }
 
-		go handleConn(conn)
-	}
+        go handleConn(conn)
+    }
 }
 
 func handleConn(conn net.Conn) {
-	defer conn.Close()
+    defer conn.Close()
 
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-	// Get Event
-	//text := scanner.Text()
-		var ge GameEvent
-		err := json.Unmarshal(scanner.Bytes(), &ge)
-		if err != nil {
-			fmt.Println("Error decoding payload:", err)
-		} else if *enablePrint {
-			fmt.Println("Received event:", ge)
-		}
+    scanner := bufio.NewScanner(conn)
+    for scanner.Scan() {
+        
+        // Receive protobuf and unmarshall
+        newMemos := &pb.Memos{}
+        err := proto.Unmarshal(scanner.Bytes(), newMemos)
+        if err != nil {
+            fmt.Println("Error receiving bytes or unmarshalling: ", err)
+        } else if *enablePrint {
+            fmt.Println("Received event:", newMemos)
+        }
 
-		// Validate Payload
-		if !ge.validate() {
-			fmt.Println("Invalid event received")
-			return
-		}
+        // Iterate and parse memos protobuf
+        for _, memo := range newMemos.Memos {
 
-		// Process Event
-		pEvent := processEvent(ge)
+            /* Kept this in here for now just for debugging / reference puroses.
+            fmt.Println("Actual: ", memo.GetActual())
+            
+            if memo.GetDestroyEvent() != nil {
+                fmt.Printf("DestroyEvent: %v\n", memo.GetDestroyEvent().Nid)
+            }
+            */
 
-		// Write to Database
-		if *enableDB {
-			writeToDB(pEvent)
-		}
+            // Marshall Protobuf to JSON
+            marshaller := &jsonpb.Marshaler{}
+            jsonStr, err := marshaller.MarshalToString(memo)
+            if err != nil {
+                fmt.Printf("Error: %v", err)
+                return
+            }
+
+            // Get EventType 
+            validEventTypes := []string{"PosTracks", "MomentumTracks", 
+            "RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
+            "DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
+            "SpawnShip","RegisterPlayer"}
+
+            var jsonData map[string]interface{}
+            err = json.Unmarshal([]byte(jsonStr), &jsonData)
+            if err != nil {
+                panic(err)
+            }
+
+            var eventTypeMatch interface{}
+            for key := range jsonData {
+                for _, k := range validEventTypes {
+                    if strings.EqualFold(key, k) {
+                        eventTypeMatch = k
+                        
+                    }
+                }
+            }
+
+            // Create Game Event Struct
+            ge := GameEvent{
+                EventID:   fmt.Sprintf("eid%010d", time.Now().Unix()),
+                EventType: eventTypeMatch.(string),
+                Timestamp: time.Now().Unix(),
+                Data: jsonStr,
+            }
+
+            // Validate Payload
+            if !ge.validate() {
+                fmt.Println("Invalid event received")
+                return
+            }
+
+            // Process Event
+            pEvent := processEvent(ge)
+
+            // Write to Database
+            if *enableDB {
+                writeToDB(pEvent)
+            }
+
+        }
 
     }
     if err := scanner.Err(); err != nil {
-			log.Println("Error reading from connection:", err)
+            log.Println("Error reading from connection:", err)
     }
 
 }
 
 func (ge GameEvent) validate() bool {
-	// Validate Payload
-	return true
+    // Validate Payload
+    return true
 }
 
 func processEvent(ge GameEvent) GameEvent {
-	// Process Event
-	return ge
+    // Process Event
+    return ge
 }
 
 func writeToDB(ge GameEvent) {
-	ctx := context.Background()
+    ctx := context.Background()
 
-	key_string, value_string := formatStruct(ge)
-	err := spannerWriteDML(ctx, key_string, value_string)
-	if err != nil {
-		fmt.Printf("Error when writing to Spanner. %v\n", err)
-	}
+    key_string, value_string := formatStruct(ge)
+    err := spannerWriteDML(ctx, key_string, value_string)
+    if err != nil {
+        fmt.Printf("Error when writing to Spanner. %v\n", err)
+    }
 
 }
 
 func spannerWriteDML(ctx context.Context, keyString, valueString string) error {
 
-	gcpProjectId    := os.Getenv("GCP_PROJECT_ID")
-	spannerInstance := os.Getenv("SPANNER_INSTANCE")
-	spannerDatabase := os.Getenv("SPANNER_DATABASE")
-	spannerTable    := os.Getenv("SPANNER_TABLE_GAME_TELEMETRY")
+    gcpProjectId    := os.Getenv("GCP_PROJECT_ID")
+    spannerInstance := os.Getenv("SPANNER_INSTANCE")
+    spannerDatabase := os.Getenv("SPANNER_DATABASE")
+    spannerTable    := os.Getenv("SPANNER_TABLE_GAME_TELEMETRY")
 
-	connectionStr := fmt.Sprintf("projects/%v/instances/%v/databases/%v", gcpProjectId, spannerInstance, spannerDatabase)
+    connectionStr := fmt.Sprintf("projects/%v/instances/%v/databases/%v", gcpProjectId, spannerInstance, spannerDatabase)
 
-	spannerClient, err := spanner.NewClient(ctx, connectionStr)
-	if err != nil {
-		return err
-	}
-	defer spannerClient.Close()
+    spannerClient, err := spanner.NewClient(ctx, connectionStr)
+    if err != nil {
+        return err
+    }
+    defer spannerClient.Close()
 
-	// Generate DML
-	dml := fmt.Sprintf("INSERT %v (%v) VALUES (%v)", spannerTable, keyString, valueString)
-	fmt.Printf("dml: %v\n", dml)
+    // Generate DML
+    dml := fmt.Sprintf("INSERT %v (%v) VALUES (%v)", spannerTable, keyString, valueString)
+    fmt.Printf("dml: %v\n", dml)
 
-	_, err = spannerClient.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		stmt := spanner.Statement{
-			SQL: dml,
-		}
-		rowCount, err := txn.Update(ctx, stmt)
-		if err != nil {
-			return err
-		}
-		log.Printf("%d record(s) inserted.\n", rowCount)
-		return err
-	})
-	return err
+    _, err = spannerClient.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+        stmt := spanner.Statement{
+            SQL: dml,
+        }
+        rowCount, err := txn.Update(ctx, stmt)
+        if err != nil {
+            return err
+        }
+        log.Printf("%d record(s) inserted.\n", rowCount)
+        return err
+    })
+    return err
 
 }
 
 func formatStruct(s interface{}) (string, string) {
-	// Use reflection to get the fields of the struct
-	st := reflect.TypeOf(s)
-	sv := reflect.ValueOf(s)
+    // Use reflection to get the fields of the struct
+    st := reflect.TypeOf(s)
+    sv := reflect.ValueOf(s)
 
-	structNames := []string{}
-	structValues := []string{}
+    structNames := []string{}
+    structValues := []string{}
 
-	for i := 0; i < st.NumField(); i++ {
-		field := st.Field(i)
+    for i := 0; i < st.NumField(); i++ {
+        field := st.Field(i)
 
-		fieldValue := sv.FieldByName(field.Name)
-		fieldValueType := fieldValue.Type().String()
-		structFieldValue := fieldValue.Interface()
+        fieldValue := sv.FieldByName(field.Name)
+        fieldValueType := fieldValue.Type().String()
+        structFieldValue := fieldValue.Interface()
 
-		// Convert the interface to string
-		stringValue, ok := structFieldValue.(string)
-		if !ok {
-			fmt.Printf("Field Type: %v\n", fieldValueType)
-			if fieldValueType == "int" {
-				stringValue = strconv.Itoa(structFieldValue.(int))
-			} else if fieldValueType == "float64" {
-				stringValue = fmt.Sprintf("%f", structFieldValue)
-			} else if fieldValueType == "bool" {
-				stringValue = strconv.FormatBool(structFieldValue.(bool))
-			}
-		} else {
-			stringValue = "\"" + stringValue + "\""
-		}
+        // Convert the interface to string
+        stringValue, ok := structFieldValue.(string)
+        if !ok {
+            fmt.Printf("Field Type: %v\n", fieldValueType)
+            if fieldValueType == "int" {
+                stringValue = strconv.Itoa(structFieldValue.(int))
+            } else if fieldValueType == "float64" {
+                stringValue = fmt.Sprintf("%f", structFieldValue)
+            } else if fieldValueType == "bool" {
+                stringValue = strconv.FormatBool(structFieldValue.(bool))
+            }
+        } else {
+            stringValue = "\"" + stringValue + "\""
+        }
 
-		// Append items to list
-		structNames = append(structNames, field.Name)
-		structValues = append(structValues, stringValue)
+        // Append items to list
+        structNames = append(structNames, field.Name)
+        structValues = append(structValues, stringValue)
 
-	}
+    }
 
-	keyString := strings.Join(structNames, ", ")
-	valueString := strings.Join(structValues, ", ")
-	return keyString, valueString
+    keyString := strings.Join(structNames, ", ")
+    valueString := strings.Join(structValues, ", ")
+    return keyString, valueString
 }
