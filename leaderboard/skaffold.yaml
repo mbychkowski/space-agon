@@ -9,7 +9,7 @@ build:
   - image: space-agon-leaderboard
     context: ../
     docker:
-      dockerfile: ../Leaderboard.Dockerfile
+      dockerfile: Leaderboard.Dockerfile
       noCache: false
       pullParent: false
       squash: false
