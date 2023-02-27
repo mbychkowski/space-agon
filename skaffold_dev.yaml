@@ -34,6 +34,10 @@ build:
       dockerfile: Director.Dockerfile
   - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend
     context: ./
+    sync:
+      manual:
+      - src: 'static/*'
+        dest: /app/static
     docker:
       dockerfile: Frontend.Dockerfile
   - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
@@ -53,19 +57,6 @@ build:
     timeout: "600s"
     concurrency: 0
     region: "us-central1"
-test:
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-director
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener
-  - context: .
-    image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-leaderboard
 
 deploy:
   kubectl:

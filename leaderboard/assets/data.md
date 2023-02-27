@@ -23,7 +23,7 @@ To populate Spanner
 
 gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \
   --sql="INSERT gameevents (EventId, PlayerID, Timestamp, EventType, Data, LastUpdated)
-  VALUES (3, '2_jfb', 1676994786, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
+  VALUES (1, '2_jfb', 1676994786, 'SpawnMissile', 'none', CURRENT_TIMESTAMP())"
 
 
 gcloud spanner databases execute-sql spaceagon-db-demo --instance=spaceagon-demo \

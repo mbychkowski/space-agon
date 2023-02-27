@@ -4,11 +4,13 @@ import (
 	"net/http"
 
   "github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/mbychkowski/space-agon/leaderboard/controllers"
 )
 
 func main() {
   r := gin.Default()
+	r.Use(cors.Default())
 
 	r.GET("/events", controllers.GetEvents)
 

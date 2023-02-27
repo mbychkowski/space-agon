@@ -26,16 +26,42 @@
         }
       }
 
+      var getData = async function(url = "") {
+        // Default options are marked with *
+        const response = await fetch(url, {
+          method: "GET",
+          mode: "cors",
+        });
+        return response.json()
+      }
+
       var fetchLeaderboard = async function() {
-        console.log("Fetching leaderboard")
         try {
-          // const response = await goFetchUrl()
-          const response = await goFetchUrl('http://34.146.254.62/leaderboard')
-          // const message = await response.json()
-          console.log(response)
+          const response = await getData('http://35.197.15.251/leaderboard')
+          const body = JSON.parse(response.message)
+
+          console.log("response:", body)
+
+          generateLeaderboard(body)
         } catch (err) {
           console.error('Caught exception', err)
         }
+      }
+
+      var generateLeaderboard = function(players) {
+        setOverlay("overlay-leaderboard")
+
+        const leaderboardDiv = document.getElementById
+        ("overlay-leaderboard")
+
+        players.reverse().forEach(player => {
+          const newDiv = document.createElement("div");
+          const textNode = document.createTextNode(`player: ${player.name}    |   score: ${player.score}`);
+
+          newDiv.appendChild(textNode)
+          newDiv.classList.add("menu-item")
+          leaderboardDiv.appendChild(newDiv)
+        })
       }
 
       if (!WebAssembly.instantiateStreaming) { // polyfill

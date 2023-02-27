@@ -19,13 +19,15 @@ package main
 
 import (
 	"errors"
+	// "encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	// "io/ioutil"
 	"log"
-	"net/http"
+	// "net/http"
 	"sync"
 	"syscall/js"
+	// "time"
 
 	"github.com/mbychkowski/space-agon/game"
 	"github.com/mbychkowski/space-agon/game/pb"
@@ -115,7 +117,7 @@ func newClient() *client {
 		return nil
 	}))
 
-	js.Global().Set("goFetchUrl", goFetchUrl())
+	// js.Global().Set("goFetchLeaderboard", goFetchLeaderboard)
 
 	js.Global().Get("window").Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		log.Println("Resizing")
@@ -586,88 +588,11 @@ func isMemoRecipient(cid int64, memo *pb.Memo) bool {
 	panic("Unknown recipient type")
 }
 
-// type player struct {
-// 	Name  string	`json:name`
-// 	Score int64		`json:score`
-// }
-
-func goFetchUrl() js.Func {
-	// var player Player
-	// OLD
-	// return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	// 	setOverlay("overlay-leaderboard")
-	// // Return a JS dictionary with two keys (of heterogeneous type)
-	// 	return map[string]interface{}{
-	// 		"hello":  "world",
-	// 		"answer": 42,
-	// 	}
-	// })
-	// OLD
-
-	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		setOverlay("overlay-leaderboard")
-		// Get the URL as argument
-		// args[0] is a js.Value, so we need to get a string out of it
-		requestUrl := args[0].String()
-
-		// Handler for the Promise
-		// We need to return a Promise because HTTP requests are blocking in Go
-		handler := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			resolve := args[0]
-			reject := args[1]
-
-			// Run this code asynchronously
-			go func() {
-				// Make the HTTP request
-
-				req, err := http.NewRequest(http.MethodGet, requestUrl, nil)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				req.Header.Add("js.fetch:mode", "no-cors")
-
-				// res, err := http.DefaultClient.Get(requestUrl)
-				res, err := http.DefaultClient.Do(req)
-				if err != nil {
-					// Handle errors: reject the Promise if we have an error
-					errorConstructor := js.Global().Get("Error")
-					errorObject := errorConstructor.New(err.Error())
-					reject.Invoke(errorObject)
-					return
-				}
-				defer res.Body.Close()
-
-				// Read the response body
-				// json.NewDecoder(resp.Body).Decode(&player)
-				data, err := ioutil.ReadAll(res.Body)
-				if err != nil {
-					// Handle errors here too
-					errorConstructor := js.Global().Get("Error")
-					errorObject := errorConstructor.New(err.Error())
-					reject.Invoke(errorObject)
-					return
-				}
-
-				// "data" is a byte slice, so we need to convert it to a JS Uint8Array object
-				arrayConstructor := js.Global().Get("Uint8Array")
-				dataJS := arrayConstructor.New(len(data))
-				js.CopyBytesToJS(dataJS, data)
-
-				// Create a Response object and pass the data
-				responseConstructor := js.Global().Get("Response")
-				response := responseConstructor.New(dataJS)
-
-				// Resolve the Promise
-				resolve.Invoke(response)
-			}()
-
-			// The handler of a Promise doesn't return any value
-			return nil
-		})
-
-		// Create and return the Promise object
-		promiseConstructor := js.Global().Get("Promise")
-		return promiseConstructor.New(handler)
-	})
+type Player struct {
+	name 	string 	`json:"name"`
+	score int			`json:"score"`
 }
+
+// func goFetchLeaderboard() {
+// 	setOverlay("overlay-leaderboard")
+// }

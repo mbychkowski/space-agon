@@ -16,8 +16,8 @@ type GameEvent struct {
 }
 
 type Player struct {
-	Name  string
-	Score int64
+	Name  string 	`json:"name"`
+	Score int64		`json:"score"`
 }
 
 const (
