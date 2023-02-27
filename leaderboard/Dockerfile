@@ -17,7 +17,7 @@ ENV GO111MODULE=on
 
 WORKDIR /go/src/github.com/mbychkowski/space-agon
 
-COPY go.sum go.mod ./
+COPY ../go.sum ../go.mod ./
 RUN go mod download
 
 RUN mkdir /app
