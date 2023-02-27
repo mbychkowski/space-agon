@@ -12,18 +12,20 @@ serialPipeline:
  stages:
   - targetId: apac
     profiles: [apac]
-  - targetId: northam-emea
-    profiles: [northam-emea]
+  - targetId: emea
+    profiles: [emea]
+  - targetId: northam
+    profiles: [northam]
 ---
-apiVersion: deploy.cloud.google.com/v1
-kind: Target
-metadata:
-  name: northam-emea
-description: prod deployment to northam and europe
-requireApproval: true
-multiTarget:
-  targetIds: [northam, emea]
----
+# apiVersion: deploy.cloud.google.com/v1
+# kind: Target
+# metadata:
+#   name: northam-emea
+# description: prod deployment to northam and europe
+# requireApproval: true
+# multiTarget:
+#   targetIds: [northam, emea]
+# ---
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
@@ -38,6 +40,7 @@ metadata:
   name: northam
 description:  |
   NORTHAM cluster (full launch)
+requireApproval: true
 gke:
   cluster: projects/prj-zeld-gke/locations/us-west1/clusters/gke-us-west1
 ---
