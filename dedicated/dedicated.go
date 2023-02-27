@@ -16,7 +16,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	// "encoding/json"
 	"flag"
 	"fmt"
 	"html"
@@ -29,6 +29,7 @@ import (
 
 	agonesSdk "agones.dev/agones/pkg/sdk"
 	agones "agones.dev/agones/sdks/go"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/mbychkowski/space-agon/game"
 	"github.com/mbychkowski/space-agon/game/pb"
 	"github.com/mbychkowski/space-agon/game/protostream"
@@ -398,14 +399,16 @@ func open(addr string) net.Conn{
 
 
 func writeEvent(memos *pb.Memos, c net.Conn) {
-	// b, err := json.Marshal(gameEvent)
-	// if err != nil {
-	// 	log.Println("Can't convert to JSON: ", err)
-	// }
+		// Marshall Protobuf to JSON
+	marshaller := &jsonpb.Marshaler{}
+	jsonStr, err := marshaller.MarshalToString(memos)
+	if err != nil {
+		log.Println("Can't convert to JSON: ", err)
+	}
 
 	// log.Println("Writing data to tcp connection:", string(b))
 
-	_, err = c.Write(memos)
+	_, err := c.Write([]byte(jsonStr))
 	if err != nil {
 		log.Println("Error writing data to tcp connection: ", err)
 	}

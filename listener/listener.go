@@ -9,7 +9,7 @@ import (
   "flag"
   "context"
   "encoding/json"
-  "os"
+	"math/rand"
   "strings"
   "reflect"
   "strconv"
@@ -118,7 +118,7 @@ func handleConn(conn net.Conn) {
             // Create Game Event Struct
             ge := GameEvent{
                 EventID:   		fmt.Sprintf("eid%010d", time.Now().Unix()),
-								PlayerID:  		randString()
+								PlayerID:  		randString(),
                 EventType: 		eventTypeMatch.(string),
                 Timestamp: 		time.Now().Unix(),
                 Data: 				jsonStr,
@@ -143,7 +143,7 @@ func handleConn(conn net.Conn) {
 
     }
     if err := scanner.Err(); err != nil {
-            log.Println("Error reading from connection:", err)
+			log.Println("Error reading from connection:", err)
     }
 
 }
@@ -246,7 +246,7 @@ func formatStruct(s interface{}) (string, string) {
 }
 
 func randString() string {
-	playerids := []int{"1_meb", "1_xyz", "2_abc", "2_jfb", "1_dtz"}
+	playerids := []string{"1_meb", "1_xyz", "2_abc", "2_jfb", "1_dtz"}
 
-	playerid := playerids[rand.Intn(5)]
+	return playerids[rand.Intn(5)]
 }
