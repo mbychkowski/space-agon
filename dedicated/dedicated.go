@@ -408,7 +408,7 @@ func writeEvent(memos *pb.Memos, c net.Conn) {
 
 	// log.Println("Writing data to tcp connection:", string(b))
 
-	_, err := c.Write([]byte(jsonStr))
+	_, err = c.Write([]byte(jsonStr))
 	if err != nil {
 		log.Println("Error writing data to tcp connection: ", err)
 	}
