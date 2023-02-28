@@ -158,7 +158,7 @@ func (d *dedicated) Handler(c *websocket.Conn) {
 		}
 	}()
 
-	conn := open(listApiHost+":"+listApiPort)
+	// conn := open(listApiHost+":"+listApiPort)
 
 	go func() {
 		// ge := &GameEvent{
@@ -176,22 +176,7 @@ func (d *dedicated) Handler(c *websocket.Conn) {
 
 			memos := &pb.Memos{}
 
-			log.Println(memos)
-
-			writeEvent(memos, conn)
-			// TODO
-			// if memos is a SpawnMissile or DestroyEvent
-			// Write to listeners
-			// {
-			// ge := &GameEvent{
-			// 	EventID: "1234", // timestamp with random + playerID
-			// 	PlayerID: cid,
-			// 	EventType: "NoEvent", SpawnMissile or DestroyEvent
-			// 	Timestamp: time.Now().Unix(),
-			// 	Data: "Specific details around",
-			// }
-			// writeEvent(ge, conn)
-			// }
+			// log.Println("mem", memos)
 
 			err := stream.Recv(memos)
 			if err != nil {
@@ -247,14 +232,23 @@ func newMemoRouter() *memoRouter {
 				case *pb.Memo_SpawnMissile:
 					actual := a.SpawnMissile
 					log.Println("SpawnMissile: ", actual)
+
+					writeEvent(memo)
+
 					mr.createMemos[actual.Nid] = memo
 				case *pb.Memo_SpawnShip:
 					actual := a.SpawnShip
 					log.Println("SpawnShip: ", actual)
+
+					writeEvent(memo)
+
 					mr.createMemos[actual.Nid] = memo
 				case *pb.Memo_DestroyEvent:
 					actual := a.DestroyEvent
 					log.Println("DestroyEvent", memo)
+
+					writeEvent(memo)
+
 					delete(mr.createMemos, actual.Nid)
 				}
 
@@ -398,30 +392,20 @@ func open(addr string) net.Conn{
 }
 
 
-func writeEvent(memos *pb.Memos, c net.Conn) {
-		// Marshall Protobuf to JSON
+func writeEvent(memo *pb.Memo) {
+
+	c := open(listApiHost+":"+listApiPort)
+	defer c.Close()
+
+	// Marshall Protobuf to JSON
 	marshaller := &jsonpb.Marshaler{}
-	jsonStr, err := marshaller.MarshalToString(memos)
+	jsonStr, err := marshaller.MarshalToString(memo)
 	if err != nil {
 		log.Println("Can't convert to JSON: ", err)
 	}
-
-	// log.Println("Writing data to tcp connection:", string(b))
-
+	log.Println("Sending to listener: ", jsonStr)
 	_, err = c.Write([]byte(jsonStr))
 	if err != nil {
 		log.Println("Error writing data to tcp connection: ", err)
 	}
-
-	// log.Println("Flush the buffer.")
-	// err = rw.Flush()
-	// if err != nil {
-	// 	println("Flush failed", err)
-	// }
-
-	// log.Println("Read the reply.")
-	// response, err := rw.ReadString('\n')
-	// if err != nil {
-	// 	println("Client: Failed to read the reply: '"+response+"'", err)
-	// }
 }

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"math/rand"
-	"time"
 )
 
 // type Message struct {
@@ -13,10 +11,6 @@ import (
 // }
 
 func main() {
-
-	// player := randString()
-
-	// fmt.Println(player)
 	writeEvent()
 }
 
@@ -40,23 +34,12 @@ func writeEvent() {
 	c := open(requestUrl)
 	defer c.Close()
 
+	// go func() {
 
 	log.Println("Sending to listener: ", jsonStr)
 	_, err := c.Write([]byte(jsonStr))
 	if err != nil {
 		log.Println("Error writing data to tcp connection: ", err)
 	}
-}
-
-func randString() string {
-	playerids := []string{"1_meb", "1_xyz", "2_abc", "2_jfb", "1_dtz"}
-
-	rand.Seed(time.Now().UnixNano())
-	i := randInt(0, len(playerids))
-
-	return playerids[i]
-}
-
-func randInt(min int, max int) int {
-	return min + rand.Intn(max-min)
+	// }()
 }

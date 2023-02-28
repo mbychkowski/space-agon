@@ -17,24 +17,24 @@ import (
 
   "cloud.google.com/go/spanner"
 
-  "github.com/golang/protobuf/proto"
-  "github.com/golang/protobuf/jsonpb"
-  "github.com/mbychkowski/space-agon/game/pb"
+  // "github.com/golang/protobuf/proto"
+  // "github.com/golang/protobuf/jsonpb"
+  // "github.com/mbychkowski/space-agon/game/pb"
 )
 
 var (
     port = flag.Int("port", 7777, "TCP Port for Listener")
     enablePrint = flag.Bool("print", true, "Enable Print")
-    enableDB = flag.Bool("db", false, "Enable Database")
+    enableDB = flag.Bool("db", true, "Enable Database")
 )
 
 type GameEvent struct {
-    EventID   string      `json:"eventid"`
-		PlayerID 	string 			`json:"playerid"`
-    EventType string      `json:"eventtype"`
-    Timestamp int64       `json:"timestamp"`
-    Data      string			`json:"data"`
-		LastUpdated int64
+    EventID   	string
+		PlayerID 		string
+    EventType 	string
+    Timestamp 	int64
+    Data      	string
+		// LastUpdated time.Time
 }
 
 func main() {
@@ -63,83 +63,56 @@ func handleConn(conn net.Conn) {
     defer conn.Close()
 
     scanner := bufio.NewScanner(conn)
+
+		var jsonData map[string]interface{}
     for scanner.Scan() {
 
+				// var gameEvent GameEvent
         // Receive protobuf and unmarshall
-        newMemos := &pb.Memos{}
-        err := proto.Unmarshal(scanner.Bytes(), newMemos)
-        if err != nil {
-            fmt.Println("Error receiving bytes or unmarshalling: ", err)
-        } else if *enablePrint {
-            fmt.Println("Received event:", newMemos)
-        }
+				fmt.Println(scanner.Bytes())
+				err := json.Unmarshal(scanner.Bytes(), &jsonData)
+				if err != nil {
+					fmt.Println(err)
+				}
 
-        // Iterate and parse memos protobuf
-        for _, memo := range newMemos.Memos {
+				// Get EventType
+				validEventTypes := []string{"PosTracks", "MomentumTracks",
+				"RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
+				"DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
+				"SpawnShip","RegisterPlayer"}
 
-            /* Kept this in here for now just for debugging / reference puroses.
-            fmt.Println("Actual: ", memo.GetActual())
+				var eventTypeMatch interface{}
+				for key := range jsonData {
+						for _, k := range validEventTypes {
+								if strings.EqualFold(key, k) {
+										eventTypeMatch = k
 
-            if memo.GetDestroyEvent() != nil {
-                fmt.Printf("DestroyEvent: %v\n", memo.GetDestroyEvent().Nid)
-            }
-            */
+								}
+						}
+				}
 
-            // Marshall Protobuf to JSON
-            marshaller := &jsonpb.Marshaler{}
-            jsonStr, err := marshaller.MarshalToString(memo)
-            if err != nil {
-                fmt.Printf("Error: %v", err)
-                return
-            }
+				ge := GameEvent{
+						EventID:   		fmt.Sprintf("eid%010d", time.Now().Unix()),
+						PlayerID:  		randString(),
+						EventType: 		eventTypeMatch.(string),
+						Timestamp: 		time.Now().Unix(),
+						Data: 				"nothing",
+						// LastUpdated:	timeNow,
+				}
 
-            // Get EventType
-            validEventTypes := []string{"PosTracks", "MomentumTracks",
-            "RotTracks","SpinTracks","ShipControlTrack","SpawnEvent",
-            "DestroyEvent","ShootMissile","SpawnMissile","SpawnExplosion",
-            "SpawnShip","RegisterPlayer"}
+				// Validate Payload
+				if !ge.validate() {
+						fmt.Println("Invalid event received")
+						return
+				}
 
-            var jsonData map[string]interface{}
-            err = json.Unmarshal([]byte(jsonStr), &jsonData)
-            if err != nil {
-                panic(err)
-            }
+				// Process Event
+				pEvent := processEvent(ge)
 
-            var eventTypeMatch interface{}
-            for key := range jsonData {
-                for _, k := range validEventTypes {
-                    if strings.EqualFold(key, k) {
-                        eventTypeMatch = k
-
-                    }
-                }
-            }
-
-            // Create Game Event Struct
-            ge := GameEvent{
-                EventID:   		fmt.Sprintf("eid%010d", time.Now().Unix()),
-								PlayerID:  		randString(),
-                EventType: 		eventTypeMatch.(string),
-                Timestamp: 		time.Now().Unix(),
-                Data: 				jsonStr,
-								LastUpdated:	time.Now().Unix(),
-            }
-
-            // Validate Payload
-            if !ge.validate() {
-                fmt.Println("Invalid event received")
-                return
-            }
-
-            // Process Event
-            pEvent := processEvent(ge)
-
-            // Write to Database
-            if *enableDB {
-                writeToDB(pEvent)
-            }
-
-        }
+				// Write to Database
+				if *enableDB {
+						writeToDB(pEvent)
+				}
 
     }
     if err := scanner.Err(); err != nil {
@@ -166,11 +139,9 @@ func writeToDB(ge GameEvent) {
     if err != nil {
         fmt.Printf("Error when writing to Spanner. %v\n", err)
     }
-
 }
 
 func spannerWriteDML(ctx context.Context, keyString, valueString string) error {
-
 
     gcpProjectId    := "prj-zeld-gke"
     spannerInstance := "spaceagon-demo"
@@ -223,8 +194,8 @@ func formatStruct(s interface{}) (string, string) {
         stringValue, ok := structFieldValue.(string)
         if !ok {
             fmt.Printf("Field Type: %v\n", fieldValueType)
-            if fieldValueType == "int" {
-                stringValue = strconv.Itoa(structFieldValue.(int))
+            if fieldValueType == "int64" {
+                stringValue = fmt.Sprintf("%010d", structFieldValue) // strconv.Itoa(intValue)
             } else if fieldValueType == "float64" {
                 stringValue = fmt.Sprintf("%f", structFieldValue)
             } else if fieldValueType == "bool" {
@@ -240,6 +211,9 @@ func formatStruct(s interface{}) (string, string) {
 
     }
 
+		structNames = append(structNames, "LastUpdated")
+		structValues = append(structValues, "CURRENT_TIMESTAMP()")
+
     keyString := strings.Join(structNames, ", ")
     valueString := strings.Join(structValues, ", ")
     return keyString, valueString
@@ -248,5 +222,12 @@ func formatStruct(s interface{}) (string, string) {
 func randString() string {
 	playerids := []string{"1_meb", "1_xyz", "2_abc", "2_jfb", "1_dtz"}
 
-	return playerids[rand.Intn(5)]
+	rand.Seed(time.Now().UnixNano())
+	i := randInt(0, len(playerids))
+
+	return playerids[i]
+}
+
+func randInt(min int, max int) int {
+	return min + rand.Intn(max-min)
 }

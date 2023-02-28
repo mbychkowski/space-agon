@@ -227,6 +227,7 @@ spec:
       labels:
         run: listener
     spec:
+      serviceAccountName: sa-leaderboard
       containers:
         - name: listener
           image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener

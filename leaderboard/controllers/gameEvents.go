@@ -70,7 +70,7 @@ func GetLeaderboard(c *gin.Context) {
 	client := models.ConnectDatabase(ctx)
 	defer client.Close()
 
-	sqlStr := `SELECT PlayerId, count(EventType) FROM gameevents WHERE EventType="SpawnMissile" GROUP by PlayerId`
+	sqlStr := `SELECT PlayerId, COUNT(EventType) FROM gameevents WHERE EventType="SpawnMissile" GROUP by PlayerId ORDER BY COUNT(EventType) DESC`
 
 	statement := spanner.Statement{
 		SQL: sqlStr,

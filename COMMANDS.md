@@ -65,3 +65,13 @@ docker run -p 2157:8080/tcp space-agon-frontend
 
 
 This is not an officially supported Google product.
+
+```
+SELECT *
+FROM EXTERNAL_QUERY(
+  'projects/prj-zeld-infra-core/locations/us/connections/space_agon_spanner',
+  '''
+  SELECT * FROM gameevents
+  ''',
+  '{"query_execution_priority":"high"}');
+```

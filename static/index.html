@@ -37,7 +37,7 @@
 
       var fetchLeaderboard = async function() {
         try {
-          const response = await getData('http://34.84.19.152/leaderboard')
+          const response = await getData('http://34.127.71.40/leaderboard')
           const body = JSON.parse(response.message)
 
           console.log("response:", body)
@@ -54,7 +54,7 @@
         const leaderboardDiv = document.getElementById
         ("overlay-leaderboard")
 
-        players.reverse().forEach(player => {
+        players.forEach(player => {
           const newDiv = document.createElement("div");
           const textNode = document.createTextNode(`player: ${player.name}    |   score: ${player.score}`);
 
