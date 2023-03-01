@@ -5,7 +5,7 @@
       "type": "cloudcode.kubernetes",
       "request": "launch",
       "skaffoldConfig": "${workspaceFolder}/skaffold_dev.yaml",
-      "watch": true,
+      "watch": false,
       "cleanUp": false,
       "portForward": true,
       "internalConsoleOptions": "neverOpen",

@@ -4,7 +4,7 @@ metadata:
   name: space-agon-leaderboard
 build:
   tagPolicy:
-    gitCommit: {}
+    sha256: {}
   artifacts:
   - image: space-agon-leaderboard
     context: ../
