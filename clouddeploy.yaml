@@ -17,15 +17,6 @@ serialPipeline:
   - targetId: northam
     profiles: [northam]
 ---
-# apiVersion: deploy.cloud.google.com/v1
-# kind: Target
-# metadata:
-#   name: northam-emea
-# description: prod deployment to northam and europe
-# requireApproval: true
-# multiTarget:
-#   targetIds: [northam, emea]
-# ---
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:

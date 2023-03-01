@@ -113,8 +113,6 @@ func newClient() *client {
 		return nil
 	}))
 
-	// js.Global().Set("goFetchLeaderboard", goFetchLeaderboard)
-
 	js.Global().Get("window").Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		log.Println("Resizing")
 		go func() {
@@ -582,9 +580,4 @@ func isMemoRecipient(cid int64, memo *pb.Memo) bool {
 		return true
 	}
 	panic("Unknown recipient type")
-}
-
-type Player struct {
-	name 	string 	`json:"name"`
-	score int			`json:"score"`
 }

@@ -18,11 +18,10 @@ metadata:
   name: space-agon
 build:
   tagPolicy:
-    # sha256: {}
-
     gitCommit:
       variant: CommitSha
       prefix: ska-dev-
+
   artifacts:
   - image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated
     context: ./
@@ -61,4 +60,4 @@ build:
 deploy:
   kubectl:
     manifests:
-    - deploy_test.yaml
+    - deploy.yaml

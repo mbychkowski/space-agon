@@ -6,7 +6,7 @@
       "request": "launch",
       "skaffoldConfig": "${workspaceFolder}/skaffold_dev.yaml",
       "watch": true,
-      "cleanUp": true,
+      "cleanUp": false,
       "portForward": true,
       "internalConsoleOptions": "neverOpen",
       "imageRegistry": "us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon"

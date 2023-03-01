@@ -9,8 +9,6 @@ steps:
       echo "***********************"
       echo "$REPO_NAME"
       echo "$BRANCH_NAME"
-      pwd
-      ls -la
       echo "***********************"
 
 - name: gcr.io/k8s-skaffold/skaffold:v2.0.5

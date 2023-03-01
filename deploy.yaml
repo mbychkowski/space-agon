@@ -24,7 +24,7 @@ spec:
   selector:
     matchLabels:
       run: frontend
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend:277b61e
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-frontend
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -75,7 +75,7 @@ spec:
         spec:
           containers:
             - name: dedicated
-              image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated:277b61e
+              image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-dedicated
               imagePullPolicy: IfNotPresent
               resources:
                 requests:
@@ -97,7 +97,7 @@ spec:
     buffer:
       bufferSize: 2
       minReplicas: 0
-      maxReplicas: 50
+      maxReplicas: 10
 
 ---
 ###############################################
@@ -121,7 +121,7 @@ spec:
       serviceAccount: fleet-allocator
       containers:
         - name: director
-          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-director:277b61e
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-director
           imagePullPolicy: IfNotPresent
 
 ---
@@ -181,7 +181,7 @@ spec:
   selector:
     matchLabels:
       run: mmf
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       labels:
@@ -189,7 +189,7 @@ spec:
     spec:
       containers:
         - name: mmf
-          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf:277b61e
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-mmf
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50502
@@ -207,3 +207,94 @@ spec:
       protocol: TCP
   selector:
     run: mmf
+
+---
+###############################################
+# Listener
+###############################################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listener
+spec:
+  selector:
+    matchLabels:
+      run: listener
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: listener
+    spec:
+      serviceAccountName: sa-leaderboard
+      containers:
+        - name: listener
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-listener
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7777
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listener
+  labels:
+    run: listener
+spec:
+  ports:
+    - port: 7777
+      protocol: TCP
+  selector:
+    run: listener
+---
+# ##############################################
+# Leaderboard
+# ##############################################
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leaderboard
+spec:
+  selector:
+    matchLabels:
+      run: leaderboard
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: leaderboard
+    spec:
+      serviceAccountName: sa-leaderboard
+      containers:
+        - name: leaderboard
+          image: us-central1-docker.pkg.dev/prj-zeld-infra-core/space-agon/space-agon-leaderboard
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaderboard
+  labels:
+    run: leaderboard
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    run: leaderboard
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: wi-sa-leaderboard@prj-zeld-gke.iam.gserviceaccount.com
+  name: sa-leaderboard

@@ -25,25 +25,25 @@ spec:
             - containerPort: 8080
       nodeSelector:
         iam.gke.io/gke-metadata-server-enabled: "true"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: leaderboard
-  labels:
-    run: leaderboard
-spec:
-  type: LoadBalancer
-  ports:
-    - port: 80
-      targetPort: 8080
-      protocol: TCP
-  selector:
-    run: leaderboard
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  annotations:
-    iam.gke.io/gcp-service-account: wi-sa-leaderboard@prj-zeld-gke.iam.gserviceaccount.com
-  name: sa-leaderboard
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: leaderboard
+#   labels:
+#     run: leaderboard
+# spec:
+#   type: LoadBalancer
+#   ports:
+#     - port: 80
+#       targetPort: 8080
+#       protocol: TCP
+#   selector:
+#     run: leaderboard
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   annotations:
+#     iam.gke.io/gcp-service-account: wi-sa-leaderboard@prj-zeld-gke.iam.gserviceaccount.com
+#   name: sa-leaderboard

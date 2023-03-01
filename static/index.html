@@ -35,24 +35,11 @@
         return response.json()
       }
 
-      var fetchLeaderboard = async function() {
-        try {
-          const response = await getData('http://34.127.71.40/leaderboard')
-          const body = JSON.parse(response.message)
-
-          console.log("response:", body)
-
-          generateLeaderboard(body)
-        } catch (err) {
-          console.error('Caught exception', err)
-        }
-      }
-
-      var generateLeaderboard = function(players) {
+      var renderLeaderboard = function (players) {
         setOverlay("overlay-leaderboard")
 
         const leaderboardDiv = document.getElementById
-        ("overlay-leaderboard")
+          ("overlay-leaderboard")
 
         players.forEach(player => {
           const newDiv = document.createElement("div");
@@ -62,6 +49,20 @@
           newDiv.classList.add("menu-item")
           leaderboardDiv.appendChild(newDiv)
         })
+      }
+
+      var fetchLeaderboard = async function() {
+        const responseUrl = "http://34.146.132.251"
+        try {
+          const response = await getData(`${responseUrl}/leaderboard`)
+          const body = JSON.parse(response.message)
+
+          console.log("response:", body)
+
+          renderLeaderboard(body)
+        } catch (err) {
+          console.error('Caught exception', err)
+        }
       }
 
       if (!WebAssembly.instantiateStreaming) { // polyfill
